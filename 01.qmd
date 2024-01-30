@@ -1,0 +1,84 @@
+---
+title: "The spelled-out intro to neural networks and backpropagation: building micrograd"
+format:
+    html:
+        code-fold: false
+jupyter: python3
+---
+
+```{python}
+import math
+import numpy as np
+import matplotlib.pyplot as plt
+```
+
+```{python}
+def f(x):
+    return 3*x**2 - 4*x + 5
+f(3.0)
+```
+```{python}
+f(2.0)
+```    
+```{python}
+xs = np.arange(-5, 5, 0.25)
+xs
+```
+```{python}
+ys = f(xs)
+ys
+```
+
+```{python}
+plt.plot(xs, ys)
+```
+The derivative is a fundamental tool of calculus that quantifies the sensitivity of change of a function's output with respect to its input. The derivative of a function of a single variable at a chosen input value, when it exists, is the slope of the tangent line to the graph of the function at that point.
+
+```{python}
+h = 0.001
+x = 3.0
+f(x)
+```
+```{python}
+f(x+h)
+```
+![Derivative](derivDef.webp)
+```{python}
+(f(x+h) - f(x))/h
+```
+```{python}
+h = 0.000001
+x = 3.0
+(f(x+h) - f(x))/h
+```
+```{python}
+h = 0.00000001
+x = 3.0
+(f(x+h) - f(x))/h
+```
+```{python}
+h = 0.0000000000000001
+x = 3.0
+(f(x+h) - f(x))/h
+```
+
+```{python}
+h = 0.00000001
+x = -3.0
+(f(x+h) - f(x))/h
+```
+
+```{python}
+h = 0.00000001
+x = 2/3
+(f(x+h) - f(x))/h
+```
+```{python}
+h = 0.000001
+x = 2/3
+(f(x+h) - f(x))/h
+```
+
+```{python}
+
+```
