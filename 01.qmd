@@ -12,6 +12,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 ```
 
+## derivative of a simple function with one input
 ```{python}
 def f(x):
     return 3*x**2 - 4*x + 5
@@ -78,7 +79,71 @@ h = 0.000001
 x = 2/3
 (f(x+h) - f(x))/h
 ```
+## derivative of a function with multiple inputs
+```{python}
+a = 2.0
+b = -3.0
+c = 10.0
+d = a*b + c
+d
+```
+```{python}
+a = 2.0
+b = -3.0
+c = 10.0
+h = 0.0001
+d1 = a*b + c
+a += h
+d2 = a*b + c
+print('d1:', d1)
+print('d2:', d2)
+print('Slope (Df(x)/Da) = b : ', (d2 - d1)/h)
+
+```
 
 ```{python}
+a = 2.0
+b = -3.0
+c = 10.0
+h = 0.0001
+d1 = a*b + c
+b += h
+d2 = a*b + c
+print('d1:', d1)
+print('d2:', d2)
+print('Slope (Df(x)/Db) = a : ', (d2 - d1)/h)
+```
+
+```{python}
+a = 2.0
+b = -3.0
+c = 10.0
+h = 0.0001
+d1 = a*b + c
+c += h
+d2 = a*b + c
+print('d1:', d1)
+print('d2:', d2)
+print('Function incrases by h; So slope is 1 : ', (d2 - d1)/h)
+```
+
+## starting the core Value object of micrograd and its visualization
+
+
+neural networks will be pretty massive expressions mathematical expressions so we need some data structures that maintain these expressions and that's what we're going to start to build out
+
+```{python}
+class Value:
+    def __init__(self, data) -> None:
+        self.data = data
+
+    def __repr__(self) -> str:
+        return f"Value(data={self.data})"
+    
+    def __add__(self, other) -> Value:
+        return Value(self.data + other.data)
+
+    def __mul__(self. other) -> Value:
+        return Value(self.data * other.data)
 
 ```
