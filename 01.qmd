@@ -132,18 +132,417 @@ print('Function incrases by h; So slope is 1 : ', (d2 - d1)/h)
 
 neural networks will be pretty massive expressions mathematical expressions so we need some data structures that maintain these expressions and that's what we're going to start to build out
 
+Value object is to keep our data
+```{python}
+class Value:
+    def __init__(self, data) -> None:
+        self.data = data
+a = Value(2.0)    
+a
+```
+
 ```{python}
 class Value:
     def __init__(self, data) -> None:
         self.data = data
 
     def __repr__(self) -> str:
-        return f"Value(data={self.data})"
-    
-    def __add__(self, other) -> Value:
+        return f"V(data={self.data})"    
+a = Value(2.0)    
+a
+```
+
+```{python}
+class Value:
+    def __init__(self, data) -> None:
+        self.data = data
+
+    def __repr__(self) -> str:
+        return f"V(data={self.data})"    
+a = Value(2.0)    
+b = Value(-3.0)
+#a + b This will break
+```
+
+```{python}
+class Value:
+    def __init__(self, data) -> None:
+        self.data = data
+
+    def __repr__(self) -> str:
+        return f"V(data={self.data})"  
+
+    def __add__(self, other: Value) -> Value:
+        return Value(self.data + other.data)
+a = Value(2.0)    
+b = Value(-3.0)
+a + b
+```
+
+```{python}
+class Value:
+    def __init__(self, data) -> None:
+        self.data = data
+
+    def __repr__(self) -> str:
+        return f"V(data={self.data})"  
+
+    def __add__(self, other: Value) -> Value:
         return Value(self.data + other.data)
 
-    def __mul__(self. other) -> Value:
+    def __mul__(self, other: Value) -> Value:
         return Value(self.data * other.data)
 
+a = Value(2.0)    
+b = Value(-3.0)
+c = Value(10.0)
+d = a * b + c
+d
 ```
+
+# Connected Tissue of this expressions graph, We need pointers to keep trak of what vales peredused what other values
+```{python}
+class Value:
+    def __init__(self, data, _children=()) -> None:
+        self.data = data
+        self._prev = set(_children) # I belive for effecency : Karapathy
+
+    def __repr__(self) -> str:
+        return f"V(data={self.data})"  
+
+    def __add__(self, other: Value) -> Value:
+        return Value(self.data + other.data, (self, other))
+
+    def __mul__(self, other: Value) -> Value:
+        return Value(self.data * other.data, (self, other))
+
+a = Value(2.0)    
+b = Value(-3.0)
+c = Value(10.0)
+d = a * b + c
+d._prev
+
+```
+
+```{python}
+class Value:
+    def __init__(self, data, _children=(), _op='') -> None:
+        self.data = data
+        self._prev = set(_children) # I belive for effecency : Karapathy
+        self._op = _op
+
+    def __repr__(self) -> str:
+        return f"V(data={self.data})"  
+
+    def __add__(self, other: Value) -> Value:
+        return Value(self.data + other.data, (self, other), '+')
+
+    def __mul__(self, other: Value) -> Value:
+        return Value(self.data * other.data, (self, other), '*')
+
+a = Value(2.0)    
+b = Value(-3.0)
+c = Value(10.0)
+d = a * b + c
+d._op
+```
+
+```{python}
+from graphviz import Digraph 
+
+def trace(root):
+  # builds a set of all nodes and edges in a graph
+  nodes, edges = set(), set()
+  def build(v):
+    if v not in nodes:
+      nodes.add(v)
+      for child in v._prev:
+        edges.add((child, v))
+        build(child)
+  build(root)
+  return nodes, edges
+
+def draw_dot(root):
+  dot = Digraph(format='svg', graph_attr={'rankdir': 'LR'}) # LR = left to right
+  
+  nodes, edges = trace(root)
+  for n in nodes:
+    uid = str(id(n))
+    # for any value in the graph, create a rectangular ('record') node for it
+    dot.node(name = uid, label = "{data %.4f}" % (n.data), shape='record')
+    if n._op:
+      # if this value is a result of some operation, create an op node for it
+      dot.node(name = uid + n._op, label = n._op)
+      # and connect this node to it
+      dot.edge(uid + n._op, uid)
+
+  for n1, n2 in edges:
+    # connect n1 to the op node of n2
+    dot.edge(str(id(n1)), str(id(n2)) + n2._op)
+
+  return dot
+```
+
+```{python}
+draw_dot(d)
+```
+
+
+# Adding lables
+
+```{python}
+class Value:
+    def __init__(self, data, _children=(), _op='', label='') -> None:
+        self.data = data
+        self._prev = set(_children) # I belive for effecency : Karapathy
+        self._op = _op
+        self.label = label
+
+    def __repr__(self) -> str:
+        return f"V({self.label}: data={self.data})"  
+
+    def __add__(self, other: Value) -> Value:
+        return Value(self.data + other.data, (self, other), '+')
+
+    def __mul__(self, other: Value) -> Value:
+        return Value(self.data * other.data, (self, other), '*')
+
+a = Value(2.0, label='a')    
+b = Value(-3.0, label='b')
+c = Value(10.0, label='c')
+e = a*b; e.label = 'e'
+d = e + c; d.label = 'd'
+d
+```
+
+```{python}
+
+def draw_dot(root):
+  dot = Digraph(format='svg', graph_attr={'rankdir': 'LR'}) # LR = left to right
+  
+  nodes, edges = trace(root)
+  for n in nodes:
+    uid = str(id(n))
+    # for any value in the graph, create a rectangular ('record') node for it
+    dot.node(name = uid, label = "{%s | data %.4f}" % (n.label, n.data), shape='record')
+    if n._op:
+      # if this value is a result of some operation, create an op node for it
+      dot.node(name = uid + n._op, label = n._op)
+      # and connect this node to it
+      dot.edge(uid + n._op, uid)
+
+  for n1, n2 in edges:
+    # connect n1 to the op node of n2
+    dot.edge(str(id(n1)), str(id(n2)) + n2._op)
+
+  return dot
+```
+
+```{python}
+draw_dot(d)
+```
+
+```{python}
+a = Value(2.0, label='a')    
+b = Value(-3.0, label='b')
+c = Value(10.0, label='c')
+e = a*b; e.label = 'e'
+d = e + c; d.label = 'd'
+f = Value(-2.0, label='f')
+L = d * f; L.label = 'L'
+draw_dot(L)
+```
+
+We have build a mathematical expresstion and visualize the forwaerd pass
+Scaler valued out put of the forad pass is -8.00
+Now we are  going to do back propergation
+Now we are going to calculate derivative 
+
+
+# adding grad
+```{python}
+class Value:
+    def __init__(self, data, _children=(), _op='', label='') -> None:
+        self.data = data
+        self.grad = 0.0
+        self._prev = set(_children) # I belive for effecency : Karapathy
+        self._op = _op
+        self.label = label
+
+    def __repr__(self) -> str:
+        return f"V({self.label}: data={self.data})"  
+
+    def __add__(self, other: Value) -> Value:
+        return Value(self.data + other.data, (self, other), '+')
+
+    def __mul__(self, other: Value) -> Value:
+        return Value(self.data * other.data, (self, other), '*')
+```
+
+```{python}
+
+def draw_dot(root):
+  dot = Digraph(format='svg', graph_attr={'rankdir': 'LR'}) # LR = left to right
+  
+  nodes, edges = trace(root)
+  for n in nodes:
+    uid = str(id(n))
+    # for any value in the graph, create a rectangular ('record') node for it
+    dot.node(name = uid, label = "{%s | data %.4f | grad %.4f}" % (n.label, n.data, n.grad), shape='record')
+    if n._op:
+      # if this value is a result of some operation, create an op node for it
+      dot.node(name = uid + n._op, label = n._op)
+      # and connect this node to it
+      dot.edge(uid + n._op, uid)
+
+  for n1, n2 in edges:
+    # connect n1 to the op node of n2
+    dot.edge(str(id(n1)), str(id(n2)) + n2._op)
+
+  return dot
+```
+
+```{python}
+a = Value(2.0, label='a')    
+b = Value(-3.0, label='b')
+c = Value(10.0, label='c')
+e = a*b; e.label = 'e'
+d = e + c; d.label = 'd'
+f = Value(-2.0, label='f')
+L = d * f; L.label = 'L'
+L1 = L.data
+draw_dot(L)
+```
+
+
+```{python}
+# avoid global varibale
+def lol():
+    h = 0.0001
+    a = Value(2.0, label='a')    
+    b = Value(-3.0, label='b')
+    c = Value(10.0, label='c')
+    e = a*b; e.label = 'e'
+    d = e + c; d.label = 'd'
+    f = Value(-2.0, label='f')
+    L = d * f; L.label = 'L'
+    L1 = L.data
+
+    a = Value(2.0 + h, label='a') # a+h   
+    b = Value(-3.0, label='b')
+    c = Value(10.0, label='c')
+    e = a*b; e.label = 'e'
+    d = e + c; d.label = 'd'
+    f = Value(-2.0, label='f')
+    L = d * f; L.label = 'L'
+    L2 = L.data
+    print(" Derivative of L with respect to a: ", (L2 - L1)/h)
+
+lol()
+```
+```{python}
+# avoid global varibale
+def lol():
+    h = 0.001
+    a = Value(2.0, label='a')    
+    b = Value(-3.0, label='b')
+    c = Value(10.0, label='c')
+    e = a*b; e.label = 'e'
+    d = e + c; d.label = 'd'
+    f = Value(-2.0, label='f')
+    L = d * f; L.label = 'L'
+    L1 = L.data
+
+    a = Value(2.0, label='a')    
+    b = Value(-3.0, label='b')
+    c = Value(10.0, label='c')
+    e = a*b; e.label = 'e'
+    d = e + c; d.label = 'd'
+    f = Value(-2.0, label='f')
+    L = d * f; L.label = 'L'
+    L2 = L.data + h
+    print(" Derivative of L with respect to L: ", (L2 - L1)/h)
+
+lol()
+```
+
+
+# Manual backpropagation
+
+L = d*f
+dL/dd = ?
+
+# proof
+
+## L = d*f
+
+(f(x+h)-f(x))/h 
+
+dL/dd = ((d+h)*f - d*f)/h
+      = (d*f + h*f - d*f)/h
+      = (h*f)/h 
+      = f
+
+dL/dd = f
+similarly dL/df = d
+
+# Manual
+```{python}
+
+#dL/dL = 1
+L.grad = 1.0
+
+#dL/df = d
+f.grad = d.data # 4.0
+
+#dL/dd = f
+d.grad = f.data # -2.0
+
+draw_dot(L)
+
+```
+
+## d = c + e
+
+(f(x+h)-f(x))/h 
+
+dd/dc = ((c+h + e) - (c + e))/h
+      = (c + h + e - c - e)/h
+      = h/h 
+      = 1.0
+
+dd/dc = 1.0
+similarly dd/de = 1.0
+
+
+# Chain Rule
+
+we know dL/dd and dd/dc, dd/de
+How do we find dL/dc ?
+
+https://en.wikipedia.org/wiki/Chain_rule
+![Chain Rule](./chain_rule.svg)
+
+"If a car travels twice as fast as a bicycle and the bicycle is four times as fast as a walking man, then the car travels 2 × 4 = 8 times as fast as the man."
+
+
+dd/dc = 1.0
+dd/de = 1.0
+d = c + e 
+
+WANT: 
+dL / dc = 
+
+KNOW:
+dL / dd 
+dd / dc 
+
+Chain Rule:
+dL / dc = (dL / dd) * (dd / dc)
+        = (dL / dd) * 1.0
+
+Plus (+) nodes local derivatives are 1 so it just routs the gradiants
+
+ ```{python}
+ c.grad = d.grad * 
+ ```
